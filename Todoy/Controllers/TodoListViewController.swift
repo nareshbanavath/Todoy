@@ -10,11 +10,15 @@ import UIKit
 
 class TodoListViewController: UITableViewController {
     var itemArray = [Item]()
-    var defaults = UserDefaults.standard
+    //userDefaults is basically to store small amount of data like storing setting of app, mobile num etc
+    //userDefaults is a plist file which loads every time when app launches(it reduces app Performance if we have more data in it) so to avoid that we use database Coredata(framework) ,sqlite
+    //userDefaults can store only standard type(String ,Double,Array etc) so to avoid that we created a brand new plist file called items.plist
+    //creating our own plist file to store our custom type data, "appendingPathComponent()" method  is used to create our own plist file
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("items.plist")
     override func viewDidLoad() {
         super.viewDidLoad()
- 
-
+        
+        self.loadItems()
     }
 
 
@@ -26,15 +30,7 @@ class TodoListViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
         cell.textLabel?.text = itemArray[indexPath.row].title
         //Ternary Operator
-        cell.accessoryType = itemArray[indexPath.row].done ? .checkmark : .none
-//        if itemArray[indexPath.row].done == false
-//        {
-//            cell.accessoryType = .none
-//        }
-//        else
-//        {
-//            cell.accessoryType = .checkmark
-//        }
+        cell.accessoryType = itemArray[indexPath.row].done == true ? .checkmark : .none
         return cell
         
     }
@@ -42,24 +38,8 @@ class TodoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         print(itemArray[indexPath.row].done)
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
-//        if itemArray[indexPath.row].done == false
-//        {
-//            itemArray[indexPath.row].done = true
-//        }
-//        else
-//        {
-//             itemArray[indexPath.row].done = false
-//        }
+        self.saveItems()
         tableView.reloadData()
-//
-//        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark
-//        {
-//            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-//        }
-//        else
-//        {
-//            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-//        }
         //to get blink selection on tableview cell
         tableView.deselectRow(at: indexPath, animated: true)
 
@@ -76,8 +56,8 @@ class TodoListViewController: UITableViewController {
             let newItem = Item()
             newItem.title = textField.text!
             self.itemArray.append(newItem)
-           //self.itemArray.append(textField.text ?? "empty item")
-            //self.defaults.set(self.itemArray, forKey: "TodoItemArray")
+            //saves the items
+            self.saveItems()
             self.tableView.reloadData()
         }
         alert.addAction(action)
@@ -87,7 +67,30 @@ class TodoListViewController: UITableViewController {
         }
         present(alert , animated: true ,completion: nil)
     }
-    
+    //MARK:- ModelManipulationMethod
+    func saveItems() {
+        let encoder = PropertyListEncoder()
+        
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+            
+        }catch{
+            
+        }
+    }
+    func loadItems() {
+        
+        let decoder = PropertyListDecoder()
+        
+        do {
+            let data = try Data.init(contentsOf: dataFilePath!)
+            self.itemArray = try decoder.decode([Item].self, from: data)
+            
+        }catch{
+            
+        }
+    }
 
 }
 
